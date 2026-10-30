@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>GenieDevs | Order Approval Desk</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#121a2d;--line:#2a3855;--text:#edf3ff;--muted:#9aabc8;--accent:#70e1c1;--danger:#ff9b9b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}header,main{max-width:1120px;margin:auto;padding:22px 18px}header{border-bottom:1px solid var(--line)}h1{margin:0;font-size:26px}h1 span{color:var(--accent)}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}input,select,textarea{width:100%;background:#0b1324;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px;font:inherit}textarea{min-height:100px}label{display:block;color:var(--muted);font-size:12px;margin:10px 0 5px}button{background:#202e49;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 13px;cursor:pointer}button.primary{background:var(--accent);color:#09201b;font-weight:700}button.danger{color:var(--danger)}button:disabled{opacity:.5;cursor:not-allowed}.hidden{display:none!important}.item{border:1px solid var(--line);border-radius:10px;padding:13px;margin:10px 0}.pill{display:inline-block;padding:3px 8px;border-radius:30px;background:#263653;font-size:11px}.pill.pending{background:#574421;color:#ffe5a3}.pill.approved{background:#174e44;color:#b8ffea}.pill.rejected{background:#552e38;color:#ffd5dc}.notice{padding:12px;border:1px solid #6a5430;background:#292317;border-radius:10px;color:#ffe5a3}.status{min-height:24px;color:var(--accent)}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>GenieDevs <span>Order Approval Desk</span></h1><p class="muted">Client acceptance → stage-by-stage approval control</p></header>
+<main>
+<section class="panel" id="authPanel">
+<h2>Sign in</h2><p class="muted">Use the GenieAgent account already registered in Supabase.</p>
+<label>Email</label><input id="email" type="email" autocomplete="email" value="geniedevs52@gmail.com">
+<label>Password (if set)</label><input id="password" type="password" autocomplete="current-password">
+<div class="row" style="margin-top:12px"><button class="primary" id="loginBtn">Sign in</button><button id="magicBtn">Send sign-in link</button></div>
+<p class="muted">A sign-in link is sent only when you press that button.</p>
+</section>
+<div id="app" class="hidden">
+<div class="row"><strong id="who"></strong><span style="flex:1"></span><button id="refreshBtn">Refresh</button><button id="logoutBtn">Sign out</button></div>
+<p class="status" id="status"></p>
+<section class="panel">
+<h2>Client accepted an order</h2>
+<p class="notice">Create an order here only after the client has clearly accepted the project. Before this point, lead search, verification, outreach and follow-up belong to the automated prospecting workflow.</p>
+<div class="grid">
+<div><label>Verified lead</label><select id="leadSelect"></select></div>
+<div><label>Client / business name</label><input id="clientName" placeholder="Loaded from selected lead"></div>
+<div><label>Agreed scope</label><textarea id="scope" placeholder="Exact deliverables accepted by the client"></textarea></div>
+<div><label>Currency</label><select id="currency"><option>USD</option><option>GBP</option><option>AUD</option><option>INR</option><option>EUR</option></select><label>Agreed amount</label><input id="amount" type="number" min="0" step="0.01" placeholder="Only if agreed"></div>
+<div><label>Payment terms</label><textarea id="terms" placeholder="Deposit, milestone payments, balance, due dates"></textarea></div>
+<div><label>Target date</label><input id="targetDate" type="date"></div>
+</div>
+<div class="row" style="margin-top:12px"><button class="primary" id="createOrderBtn">Record accepted order</button></div>
+</section>
+<section class="panel"><h2>Client orders</h2><div id="orders"><p class="muted">Loading…</p></div></section>
+<section class="panel"><h2>Approval queue</h2><p class="muted">Every external document or project-stage action must wait for an explicit approval. Approval records do not themselves send emails, agreements or files.</p><div id="approvals"><p class="muted">Loading…</p></div></section>
+<section class="panel"><h2>Create an approval request</h2>
+<div class="grid"><div><label>Order</label><select id="orderSelect"></select></div><div><label>Stage</label><select id="stage"><option value="financial_proposal_send">Send financial proposal</option><option value="agreement_send">Send agreement</option><option value="project_start">Start project</option><option value="milestone_delivery">Send milestone delivery</option><option value="final_delivery">Send final delivery</option><option value="order_close">Close order</option></select></div></div>
+<label>Document / action title</label><input id="approvalTitle" placeholder="e.g. Website redesign — financial proposal">
+<label>Email subject (optional)</label><input id="docSubject">
+<label>Full content / action details</label><textarea id="docBody" placeholder="Complete proposal, agreement, delivery note or action summary"></textarea>
+<div class="row" style="margin-top:12px"><button class="primary" id="requestBtn">Submit for my approval</button></div>
+</section>
+</div>
+</main>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_URL='https://irpqaoooosrjhviwdddo.supabase.co';
+const SUPABASE_KEY='sb_publishable_oE-apR4ycz0hDv0jUnOC_g_YGkhnVVp';
+const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+let leads=[],orders=[];
+function say(s){$('status').textContent=s||''}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function showSession(){
+ const {data:{session}}=await db.auth.getSession();
+ $('authPanel').classList.toggle('hidden',!!session);$('app').classList.toggle('hidden',!session);
+ if(session){$('who').textContent=session.user.email;await loadAll()}
+}
+async function loadAll(){
+ say('Loading account data…');
+ const [l,o,a]=await Promise.all([
+  db.from('leads').select('id,company_name,country,service_need,lead_status,deal_stage,client_confirmed_at').order('created_at',{ascending:false}),
+  db.from('client_orders').select('*').order('updated_at',{ascending:false}),
+  db.from('approval_requests').select('*').order('requested_at',{ascending:false})
+ ]);
+ if(l.error||o.error||a.error){say('Load error: '+(l.error||o.error||a.error).message);return}
+ leads=l.data||[];orders=o.data||[];
+ $('leadSelect').innerHTML=leads.map(x=>'<option value="'+x.id+'">'+esc(x.company_name)+' — '+esc(x.country||'Country unknown')+'</option>').join('');
+ $('orders').innerHTML=orders.length?orders.map(x=>'<div class="item"><strong>'+esc(x.client_name)+'</strong> <span class="pill">'+esc(x.order_status)+'</span><p class="muted">'+esc(x.scope_summary)+'<br>'+esc(x.agreed_currency)+' '+esc(x.agreed_amount??'Not set')+' · Accepted '+new Date(x.client_accepted_at).toLocaleString()+'</p></div>').join(''):'<p class="muted">No accepted orders recorded.</p>';
+ $('orderSelect').innerHTML=orders.map(x=>'<option value="'+x.id+'">'+esc(x.client_name)+' — '+esc(x.order_status)+'</option>').join('');
+ const items=a.data||[];
+ $('approvals').innerHTML=items.length?items.map(x=>'<div class="item"><strong>'+esc(x.title)+'</strong> <span class="pill '+esc(x.status)+'">'+esc(x.status)+'</span><p class="muted">Stage: '+esc(x.stage)+' · Requested: '+new Date(x.requested_at).toLocaleString()+'</p><p>'+esc(x.document_subject||'')+'</p><details><summary>View content / details</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(x.document_body||'No content supplied')+'</pre></details>'+(x.status==='pending'?'<div class="row" style="margin-top:10px"><button class="primary" data-approve="'+x.id+'">Approve</button><button class="danger" data-reject="'+x.id+'">Reject</button></div>':'')+'</div>').join(''):'<p class="muted">No approval requests pending.</p>';
+ say('Synced.');
+}
+$('leadSelect').addEventListener('change',()=>{const x=leads.find(x=>x.id===$('leadSelect').value);if(x){$('clientName').value=x.company_name;$('scope').value=x.service_need||''}});
+$('loginBtn').onclick=async()=>{const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){say(error.message);return}await showSession()};
+$('magicBtn').onclick=async()=>{const {error}=await db.auth.signInWithOtp({email:$('email').value,options:{emailRedirectTo:location.href}});say(error?error.message:'Sign-in link sent. Open your email to finish signing in.')};
+$('logoutBtn').onclick=async()=>{await db.auth.signOut();await showSession()};
+$('refreshBtn').onclick=loadAll;
+$('createOrderBtn').onclick=async()=>{
+ const lead=leads.find(x=>x.id===$('leadSelect').value);if(!lead){say('Select a lead.');return}
+ const scope=$('scope').value.trim();if(!scope){say('Enter the exact accepted project scope.');return}
+ const {data:{user}}=await db.auth.getUser();
+ const {data,error}=await db.from('client_orders').insert({owner_id:user.id,lead_id:lead.id,client_name:$('clientName').value.trim()||lead.company_name,scope_summary:scope,agreed_currency:$('currency').value,agreed_amount:$('amount').value?Number($('amount').value):null,payment_terms:$('terms').value.trim()||null,target_date:$('targetDate').value||null}).select().single();
+ if(error){say(error.message);return}
+ await db.from('leads').update({lead_status:'client_confirmed',deal_stage:'client_confirmed',client_confirmed_at:new Date().toISOString()}).eq('id',lead.id);
+ say('Accepted order recorded. Next stages require separate approvals.');await loadAll();
+};
+$('requestBtn').onclick=async()=>{
+ const order=orders.find(x=>x.id===$('orderSelect').value);if(!order){say('Select an order.');return}
+ const title=$('approvalTitle').value.trim();if(!title){say('Enter an approval title.');return}
+ const {data:{user}}=await db.auth.getUser();
+ const {error}=await db.from('approval_requests').insert({owner_id:user.id,order_id:order.id,lead_id:order.lead_id,stage:$('stage').value,title,document_subject:$('docSubject').value.trim()||null,document_body:$('docBody').value.trim()||null});
+ if(error){say(error.message);return}
+ say('Approval request created. Nothing has been sent.');await loadAll();
+};
+$('approvals').addEventListener('click',async e=>{
+ const id=e.target.dataset.approve||e.target.dataset.reject;if(!id)return;
+ const status=e.target.dataset.approve?'approved':'rejected';
+ const {data:{user}}=await db.auth.getUser();
+ const {error}=await db.from('approval_requests').update({status,decided_at:new Date().toISOString(),decision_notes:status==='approved'?'Explicitly approved by account owner.':'Rejected by account owner.'}).eq('id',id).eq('status','pending').eq('owner_id',user.id);
+ if(error){say(error.message);return}
+ say(status==='approved'?'Approved. This records permission only; it does not send anything.':'Rejected.');await loadAll();
+});
+db.auth.onAuthStateChange(()=>showSession());
+showSession();
+</script>
+</body></html>
