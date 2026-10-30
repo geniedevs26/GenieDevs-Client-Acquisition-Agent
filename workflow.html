@@ -14,7 +14,7 @@
 <main>
 <section class="panel" id="authPanel">
 <h2>Sign in</h2><p class="muted">Use the GenieAgent account already registered in Supabase.</p>
-<label>Email</label><input id="email" type="email" autocomplete="email" value="geniedevs52@gmail.com">
+<label>Email</label><input id="email" type="email" autocomplete="email" placeholder="Account email">
 <label>Password (if set)</label><input id="password" type="password" autocomplete="current-password">
 <div class="row" style="margin-top:12px"><button class="primary" id="loginBtn">Sign in</button><button id="magicBtn">Send sign-in link</button></div>
 <p class="muted">A sign-in link is sent only when you press that button.</p>
@@ -96,15 +96,24 @@ $('requestBtn').onclick=async()=>{
  const {data:{user}}=await db.auth.getUser();
  const {error}=await db.from('approval_requests').insert({owner_id:user.id,order_id:order.id,lead_id:order.lead_id,stage:$('stage').value,title,document_subject:$('docSubject').value.trim()||null,document_body:$('docBody').value.trim()||null});
  if(error){say(error.message);return}
+ const waiting={financial_proposal_send:'awaiting_financial_approval',agreement_send:'awaiting_agreement_approval',project_start:'awaiting_project_start_approval',milestone_delivery:'awaiting_milestone_approval',final_delivery:'awaiting_final_delivery_approval',order_close:order.order_status};
+ if(waiting[$('stage').value]!==order.order_status){await db.from('client_orders').update({order_status:waiting[$('stage').value]}).eq('id',order.id)}
  say('Approval request created. Nothing has been sent.');await loadAll();
 };
 $('approvals').addEventListener('click',async e=>{
  const id=e.target.dataset.approve||e.target.dataset.reject;if(!id)return;
  const status=e.target.dataset.approve?'approved':'rejected';
  const {data:{user}}=await db.auth.getUser();
+ const {data:req,error:readError}=await db.from('approval_requests').select('order_id,stage').eq('id',id).eq('owner_id',user.id).single();
+ if(readError){say(readError.message);return}
  const {error}=await db.from('approval_requests').update({status,decided_at:new Date().toISOString(),decision_notes:status==='approved'?'Explicitly approved by account owner.':'Rejected by account owner.'}).eq('id',id).eq('status','pending').eq('owner_id',user.id);
  if(error){say(error.message);return}
- say(status==='approved'?'Approved. This records permission only; it does not send anything.':'Rejected.');await loadAll();
+ if(status==='approved'){
+  const next={financial_proposal_send:'financial_proposal_approved',agreement_send:'agreement_approved',project_start:'in_progress',milestone_delivery:'in_progress',final_delivery:'in_progress',order_close:'completed'};
+  const {error:orderError}=await db.from('client_orders').update({order_status:next[req.stage]}).eq('id',req.order_id).eq('owner_id',user.id);
+  if(orderError){say('Approval recorded, but order status update failed: '+orderError.message);await loadAll();return}
+ }
+ say(status==='approved'?'Approved. Permission recorded; the external action is not sent by this desk.':'Rejected.');await loadAll();
 });
 db.auth.onAuthStateChange(()=>showSession());
 showSession();
