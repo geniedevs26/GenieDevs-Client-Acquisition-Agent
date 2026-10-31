@@ -31,7 +31,7 @@ The dashboard deliberately labels these integrations as not configured. Prospect
 - Automated marketing voice calls require recorded explicit consent.
 - Owner approval remains required for outreach execution and all commercial decisions.
 - Opt-outs and suppressed contacts must never be contacted again.
-- Daily target is limited to 1–20 prospects; it is a target, not a promise of successful contacts.
+- Geographic scope is worldwide: all countries are eligible, ranked by service fit, explicit paid-project intent, contact verification and recency — not by country priority. Daily target is limited to 1–20 prospects; it is a target, not a promise of successful contacts.
 - No paid service, trial credit or automatic upgrade is assumed.
 - Never commit provider secrets to GitHub. Use provider-specific secret storage only after a legitimate zero-cost option is verified.
 
