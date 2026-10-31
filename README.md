@@ -1,6 +1,6 @@
 # GenieDevs Client Acquisition Agent
 
-A static lead CRM and Supabase-backed client order approval desk for GenieDevs.
+A private-by-default lead CRM, AI Business Agent control panel, and Supabase-backed client order approval desk.
 
 ## Deploy to Cloudflare Pages
 1. Open Cloudflare Dashboard → Workers & Pages → Create → Pages → Connect to Git.
@@ -8,21 +8,32 @@ A static lead CRM and Supabase-backed client order approval desk for GenieDevs.
 3. Framework preset: **None**.
 4. Build command: leave blank.
 5. Build output directory: `/` (repository root).
-6. Deploy. The app is served from `index.html`.
+6. Deploy. The main CRM is served from `index.html`; the AI Business Agent is `agent.html`.
 
-## Features
-- Separate `workflow.html` Order Approval Desk with Supabase authentication and shared order/approval records.
-- Client order records created after client acceptance; stage-by-stage approval queue for financial proposal, agreement, project start, milestones, final delivery, and closure.
-- Row-level security policies restrict order and approval records to the signed-in account owner.
-- Lead records with country, public business contact, website, source URL, service opportunity, and a required business-specific observation.
-- Search/filter pipeline and activity timeline.
-- Drafts for initial email, follow-up, call opening, proposal outline, and agreement discussion draft.
-- CSV import/export backups; duplicate check on non-empty email addresses.
-- Opt-out and not-interested statuses block draft generation; opt-out is locked against accidental changes in the UI.
-- Browser localStorage only; data stays in this browser profile unless exported.
+## Current application areas
+- `index.html`: browser-local lead CRM, lead pipeline, outreach draft builder, activity log and CSV import/export.
+- `agent.html`: authenticated AI Business Agent control panel, daily target settings, prospect research request queue, integration readiness and outreach queue status.
+- `workflow.html`: Supabase-authenticated client order and owner approval workflow for proposals, agreements, project start, milestones, final delivery and closure.
+- Supabase Edge Function `agent-control`: authenticated status, safe settings and prospecting request endpoints.
+- Supabase tables: leads, outreach actions, prospect search jobs, outreach queue, contact suppressions, client orders, approvals and audit history.
 
-## Current boundaries
-The existing `index.html` remains a browser-local lead CRM. The new `workflow.html` stores order and approval records in Supabase. It records approval decisions but does not send proposals, agreements, milestone files, or final deliveries. Automatic lead discovery/verification, initial outreach, scheduled follow-ups, and PSTN/AI calls are not yet connected. These require a verified search/research integration, email sender, telephony provider, background scheduler, provider credentials, and legal-compliance controls. No private API credentials are committed to this repository.
+## Important live boundaries
+The AI Business Agent control plane and database safeguards are deployed. This is **not yet a fully autonomous revenue-generating agent**. The following external execution integrations are not connected or verified:
+- Automated lead discovery/search provider.
+- Compliant email sender and inbound reply/bounce webhooks.
+- PSTN telephony provider and AI voice runtime.
+- Scheduled background worker to run discovery, send approved email, process replies and follow-ups.
+
+The dashboard deliberately labels these integrations as not configured. Prospect search requests are recorded as `needs_review`, not falsely marked completed. No email or phone call is sent by the current Edge Function. Do not enable real outreach until the relevant provider, sender identity, consent/legal basis, suppression checks, webhook verification and spending controls are configured and tested.
+
+## Safety and owner control
+- No personal mobile/SIM calling.
+- Automated marketing voice calls require recorded explicit consent.
+- Owner approval remains required for outreach execution and all commercial decisions.
+- Opt-outs and suppressed contacts must never be contacted again.
+- Daily target is limited to 1–20 prospects; it is a target, not a promise of successful contacts.
+- No paid service, trial credit or automatic upgrade is assumed.
+- Never commit provider secrets to GitHub. Use provider-specific secret storage only after a legitimate zero-cost option is verified.
 
 ## Privacy and security
-Do not enter passwords, payment details, or sensitive personal information. Export CSV backups regularly. Clearing browser storage or using another browser/device may remove or hide records. Review drafts for accuracy before sending. The agreement output is a discussion draft, not legal advice.
+Supabase tables use row-level security scoped to the signed-in owner. The browser-only CRM stores its own leads in localStorage; export CSV backups regularly. Avoid storing passwords, payment details or sensitive personal information. Agreement drafts are for discussion and are not legal advice.
