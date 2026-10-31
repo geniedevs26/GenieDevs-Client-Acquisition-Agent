@@ -1,39 +1,40 @@
 # GenieDevs Client Acquisition Agent
 
-A private-by-default lead CRM, AI Business Agent control panel, and Supabase-backed client order approval desk.
+A private-by-default business command center backed by Supabase.
 
-## Deploy to Cloudflare Pages
-1. Open Cloudflare Dashboard → Workers & Pages → Create → Pages → Connect to Git.
-2. Select `geniedevs26/GenieDevs-Client-Acquisition-Agent`.
-3. Framework preset: **None**.
-4. Build command: leave blank.
-5. Build output directory: `/` (repository root).
-6. Deploy. The main CRM is served from `index.html`; the AI Business Agent is `agent.html`.
+## Live site
+Cloudflare Pages: https://geniedevs-client-acquisition-agent.pages.dev/
 
-## Current application areas
-- `index.html`: browser-local lead CRM, lead pipeline, outreach draft builder, activity log and CSV import/export.
-- `agent.html`: authenticated AI Business Agent control panel, daily target settings, worldwide public-source prospect discovery, integration readiness and outreach queue status.
-- `workflow.html`: Supabase-authenticated client order and owner approval workflow for proposals, agreements, project start, milestones, final delivery and closure.
-- Supabase Edge Function `agent-control`: authenticated status, safe settings and prospecting request endpoints.
-- Supabase tables: leads, outreach actions, prospect search jobs, outreach queue, contact suppressions, client orders, approvals and audit history.
+## Pages
+- `index.html`: primary Business Command Center — authenticated live metrics, client-confirmed leads, separate research candidates, outreach records, orders, finance and activity history.
+- `agent.html`: detailed AI Business Agent console and on-demand worldwide prospect research.
+- `workflow.html`: client order and owner approval workflow.
 
-## Important live boundaries
-The AI Business Agent control plane and database safeguards are deployed. This is **not yet a fully autonomous revenue-generating agent**. The following external execution integrations are not connected or verified:
-- Additional verified lead sources beyond Hacker News Algolia and GitHub Issues.
-- Compliant email sender and inbound reply/bounce webhooks.
-- PSTN telephony provider and AI voice runtime.
-- Scheduled background worker to run discovery, send approved email, process replies and follow-ups.
+## Current working capabilities
+- Supabase authentication and owner-scoped data access.
+- Worldwide on-demand public-source discovery using Hacker News Algolia and GitHub Issues.
+- Candidate deduplication and storage in `leads` with `lead_status = needs_review`; candidates are not counted as confirmed leads.
+- Separate client-confirmed lead view based on `client_confirmed_at`.
+- Outreach queue and action history visibility.
+- Client order and approval tracking.
+- Income, expense, refund and net recorded finance metrics.
+- Automation event history and daily research target settings.
+- Contact suppression records and owner approval safeguards.
 
-The dashboard deliberately labels these integrations as not configured. On-demand prospect discovery searches public Hacker News Algolia and GitHub Issues APIs with 14 queries (12 broad paid-intent queries plus 2 user-query/service-specific searches). Matches are deduplicated and saved as `needs_review`; they are candidates, not fully qualified leads. No email or phone call is sent by the current Edge Function. Do not enable real outreach until the relevant provider, sender identity, consent/legal basis, suppression checks, webhook verification and spending controls are configured and tested.
+## Not yet operational — do not represent as automated
+- Scheduled background prospect discovery.
+- Automated email delivery.
+- Incoming email reply and bounce webhooks.
+- Automated phone calls / AI voice.
+- Automatic follow-up execution.
 
-## Safety and owner control
-- No personal mobile/SIM calling.
-- Automated marketing voice calls require recorded explicit consent.
-- Owner approval remains required for outreach execution and all commercial decisions.
-- Opt-outs and suppressed contacts must never be contacted again.
-- Geographic scope is worldwide: all countries are eligible, ranked by service fit, explicit paid-project intent, contact verification and recency — not by country priority. Daily target is limited to 1–20 prospects; it is a target, not a promise of successful contacts.
-- No paid service, trial credit or automatic upgrade is assumed.
-- Never commit provider secrets to GitHub. Use provider-specific secret storage only after a legitimate zero-cost option is verified.
+These integrations require a configured scheduler, compliant provider credentials, verified sender identity/webhooks, and explicit legal/consent controls. The current Edge Function performs on-demand research only. It does not send email or make calls. A search candidate is not a qualified paid lead: verify the active request, requester, budget and a practical contact route before qualification.
 
-## Privacy and security
-Supabase tables use row-level security scoped to the signed-in owner. The browser-only CRM stores its own leads in localStorage; export CSV backups regularly. Avoid storing passwords, payment details or sensitive personal information. Agreement drafts are for discussion and are not legal advice.
+## Safety
+- Owner authentication and row-level security are required.
+- No personal SIM/mobile calling.
+- Automated marketing voice calls remain disabled unless recorded explicit consent and applicable legal controls are in place.
+- Owner approval is required before external outreach and commercial actions.
+- Honour opt-outs and contact suppression records.
+- Never commit provider secrets to GitHub.
+- Do not enable paid services or automatic spending without explicit approval.
