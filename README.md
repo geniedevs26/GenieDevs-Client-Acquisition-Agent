@@ -12,19 +12,19 @@ A private-by-default lead CRM, AI Business Agent control panel, and Supabase-bac
 
 ## Current application areas
 - `index.html`: browser-local lead CRM, lead pipeline, outreach draft builder, activity log and CSV import/export.
-- `agent.html`: authenticated AI Business Agent control panel, daily target settings, prospect research request queue, integration readiness and outreach queue status.
+- `agent.html`: authenticated AI Business Agent control panel, daily target settings, worldwide public-source prospect discovery, integration readiness and outreach queue status.
 - `workflow.html`: Supabase-authenticated client order and owner approval workflow for proposals, agreements, project start, milestones, final delivery and closure.
 - Supabase Edge Function `agent-control`: authenticated status, safe settings and prospecting request endpoints.
 - Supabase tables: leads, outreach actions, prospect search jobs, outreach queue, contact suppressions, client orders, approvals and audit history.
 
 ## Important live boundaries
 The AI Business Agent control plane and database safeguards are deployed. This is **not yet a fully autonomous revenue-generating agent**. The following external execution integrations are not connected or verified:
-- Automated lead discovery/search provider.
+- Additional verified lead sources beyond Hacker News Algolia and GitHub Issues.
 - Compliant email sender and inbound reply/bounce webhooks.
 - PSTN telephony provider and AI voice runtime.
 - Scheduled background worker to run discovery, send approved email, process replies and follow-ups.
 
-The dashboard deliberately labels these integrations as not configured. Prospect search requests are recorded as `needs_review`, not falsely marked completed. No email or phone call is sent by the current Edge Function. Do not enable real outreach until the relevant provider, sender identity, consent/legal basis, suppression checks, webhook verification and spending controls are configured and tested.
+The dashboard deliberately labels these integrations as not configured. On-demand prospect discovery searches public Hacker News Algolia and GitHub Issues APIs with 14 queries (12 broad paid-intent queries plus 2 user-query/service-specific searches). Matches are deduplicated and saved as `needs_review`; they are candidates, not fully qualified leads. No email or phone call is sent by the current Edge Function. Do not enable real outreach until the relevant provider, sender identity, consent/legal basis, suppression checks, webhook verification and spending controls are configured and tested.
 
 ## Safety and owner control
 - No personal mobile/SIM calling.
